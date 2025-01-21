@@ -1,89 +1,4 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
+vim.cmd 'let g:netrw_liststyle = 3'
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -91,7 +6,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -102,7 +17,7 @@ vim.g.have_nerd_font = false
 vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -128,7 +43,7 @@ vim.opt.undofile = true
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 
--- Keep signcolumn on by default
+-- Keep signcolumn on by defaule
 vim.opt.signcolumn = 'yes'
 
 -- Decrease update time
@@ -156,6 +71,14 @@ vim.opt.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
+
+-- tabs & identation
+vim.opt.tabstop = 2 -- 2 spaces for tab$ (prettier default)
+vim.opt.shiftwidth = 2 -- 2 spaces for indent width
+vim.opt.expandtab = true -- expand tab to spaces
+vim.opt.autoindent = true -- copy indent from current line when starting new one
+
+vim.opt.wrap = false
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
@@ -829,16 +752,82 @@ require('lazy').setup({
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
-    init = function()
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
 
-      -- You can configure highlights by doing something like:
-      vim.cmd.hi 'Comment gui=none'
+    -- NOTE: 'tokyonight' theme
+    --
+    -- 'folke/tokyonight.nvim',
+    -- priority = 1000, -- Make sure to load this before all the other start plugins.
+    -- init = function()
+    --   -- Load the colorscheme here.
+    --   -- Like many other themes, this one has different styles, and you could load
+    --   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
+    --   vim.cmd.colorscheme 'tokyonight-night'
+    --
+    --   -- You can configure highlights by doing something like:
+    --   vim.cmd.hi 'Comment gui=none'
+
+    -- NOTE: 'gruvbox' theme
+    --
+    -- 'sainnhe/gruvbox-material',
+    -- lazy = false,
+    -- priority = 1000,
+    -- init = function()
+    --   vim.g.gruvbox_material_enable_italic = true
+    --   vim.cmd.colorscheme 'gruvbox-material'
+    -- end,
+    --
+    -- NOTE: 'monokai' theme
+    --
+    -- 'loctvl842/monokai-pro.nvim',
+    -- lazy = false,
+    -- priority = 1000,
+    -- config = function()
+    --   require('monokai-pro').setup {
+    --     filter = 'octagon',
+    --   }
+    --   vim.cmd.colorscheme 'monokai-pro'
+    -- end,
+    --
+    -- NOTE: 'catppucin' theme
+    --
+    -- 'catppuccin/nvim',
+    -- lazy = false,
+    -- priority = 1000,
+    -- config = function()
+    --   require('catppuccin').setup {
+    --     flavour = 'mocha',
+    --     integrations = {
+    --       nvimtree = true,
+    --       treesitter = true,
+    --       gitsigns = true,
+    --       telescope = true,
+    --     },
+    --   }
+    --   vim.cmd.colorscheme 'catppuccin-mocha'
+    -- end,
+    --
+    -- NOTE: 'tokyodark' theme
+    --
+    -- 'tiagovla/tokyodark.nvim',
+    -- lazy = false,
+    -- priority = 1000,
+    -- init = function()
+    --   vim.cmd.colorscheme 'tokyodark'
+    -- end,
+    --
+    -- NOTE: 'kanagawa' theme
+    --
+    'rebelot/kanagawa.nvim',
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require('kanagawa').setup {
+        background = {
+          dark = 'wave',
+          light = 'lotus',
+        },
+      }
+      vim.cmd.colorscheme 'kanagawa'
     end,
   },
 
@@ -920,9 +909,16 @@ require('lazy').setup({
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  --
+  --[My Plugins]
+  -- NOTE: The followig are plugins I Added
+  --
+  require 'custom.plugins.nvim-tree',
+  require 'custom.plugins.bufferline',
+  require 'custom.plugins.lualine',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -951,6 +947,5 @@ require('lazy').setup({
     },
   },
 })
-
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
