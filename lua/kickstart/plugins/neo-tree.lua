@@ -14,9 +14,9 @@ return {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   },
   opts = {
+    hijack_netrw_behavior = 'open_default',
     filesystem = {
       window = {
-        position = 'right',
         mappings = {
           ['\\'] = 'close_window',
         },

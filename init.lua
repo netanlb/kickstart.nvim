@@ -1,4 +1,37 @@
-vim.cmd 'let g:netrw_liststyle = 3'
+vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
+  pattern = { '*.component.html' },
+  callback = function()
+    vim.bo.filetype = 'angular'
+  end,
+})
+
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = { '*.component.html' },
+  callback = function()
+    if vim.bo.filetype == 'angular' then
+      vim.b.previous_filetype = 'angular' -- Save original filetype
+      vim.bo.filetype = 'html' -- Temporarily switch to HTML for formatting
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd('BufWritePost', {
+  pattern = { '*.component.html' },
+  callback = function()
+    if vim.b.previous_filetype then
+      vim.bo.filetype = vim.b.previous_filetype -- Restore Angular highlighting
+      vim.b.previous_filetype = nil
+    end
+  end,
+})
+
+-- Disable netrw
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
+-- Open Neotree on startup
+vim.cmd [[autocmd VimEnter * Neotree show]]
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -88,6 +121,9 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>dd', function()
+  vim.diagnostic.open_float()
+end, { desc = 'Toggles local troubleshoot' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -175,6 +211,7 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+      current_line_blame = true,
     },
   },
 
@@ -311,10 +348,20 @@ require('lazy').setup({
         --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
         --   },
         -- },
-        -- pickers = {}
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
+          },
+        },
+        defaults = {
+          vimgrep_arguments = {
+            'rg', -- Ensure 'rg' is included as the first argument
+            '--color=never',
+            '--no-heading',
+            '--with-filename',
+            '--line-number',
+            '--column',
+            '-P', -- Enable PCRE2 regex support
           },
         },
       }
@@ -335,6 +382,21 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+
+      -- custom telescope keymaps
+      -- search directories including hidden
+      vim.keymap.set('n', '<leader>sa', function()
+        require('telescope.builtin').find_files {
+          find_command = { 'fd', '--type', 'd', '--hidden', '--no-ignore', '--exclude', '.git', '--exclude', '.nx', '--exclude', 'node_modules' },
+        }
+      end, { desc = '[S]earch [A]ll Directories Hidden as well' })
+
+      -- search files including hidden (excluding .git and .nx)
+      vim.keymap.set('n', '<leader>sq', function()
+        require('telescope.builtin').find_files {
+          find_command = { 'fd', '--hidden', '--no-ignore', '--exclude', '.git', '--exclude', '.nx', '--exclude', 'node_modules' },
+        }
+      end, { desc = '[S]earch [A]ll Files and Directories Hidden as well' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -513,14 +575,14 @@ require('lazy').setup({
       })
 
       -- Change diagnostic symbols in the sign column (gutter)
-      -- if vim.g.have_nerd_font then
-      --   local signs = { ERROR = '', WARN = '', INFO = '', HINT = '' }
-      --   local diagnostic_signs = {}
-      --   for type, icon in pairs(signs) do
-      --     diagnostic_signs[vim.diagnostic.severity[type]] = icon
-      --   end
-      --   vim.diagnostic.config { signs = { text = diagnostic_signs } }
-      -- end
+      if vim.g.have_nerd_font then
+        local signs = { ERROR = '', WARN = '', INFO = '', HINT = '' }
+        local diagnostic_signs = {}
+        for type, icon in pairs(signs) do
+          diagnostic_signs[vim.diagnostic.severity[type]] = icon
+        end
+        vim.diagnostic.config { signs = { text = diagnostic_signs } }
+      end
 
       -- LSP servers and clients are able to communicate to each other what features they support.
       --  By default, Neovim doesn't support everything that is in the LSP specification.
@@ -553,17 +615,58 @@ require('lazy').setup({
         --
 
         lua_ls = {
-          -- cmd = { ... },
-          -- filetypes = { ... },
-          -- capabilities = {},
           settings = {
             Lua = {
               completion = {
                 callSnippet = 'Replace',
               },
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+              -- Toggle below to ignore Lua_LS's noisy `missing-fields` warnings
               -- diagnostics = { disable = { 'missing-fields' } },
             },
+          },
+        },
+
+        tsserver = {
+          cmd = { 'typescript-language-server', '--stdio' },
+          root_dir = function(fname)
+            local root = require('lspconfig.util').root_pattern('nx.json', 'tsconfig.base.json', 'package.json', '.git')(fname)
+            return root or vim.loop.cwd() -- ✅ Fallback to current working directory
+          end,
+          flags = {
+            debounce_text_changes = 150,
+            allow_incremental_sync = true, -- ✅ Avoids LSP reload on file switch
+          },
+          settings = {
+            typescript = {
+              tsserver = {
+                logVerbosity = 'off',
+                memory = 16384, -- ✅ Ensure enough memory for NX monorepos
+              },
+            },
+          },
+        },
+
+        angularls = {
+          cmd = {
+            'ngserver',
+            '--stdio',
+            '--tsProbeLocations',
+            vim.fn.stdpath 'data' .. '/mason/packages/angular-language-server/node_modules',
+            '--ngProbeLocations',
+            vim.fn.stdpath 'data' .. '/mason/packages/angular-language-server/node_modules/@angular/language-server/node_modules',
+          },
+          filetypes = { 'angular' },
+          root_dir = require('lspconfig.util').root_pattern('angular.json', 'nx.json', 'package.json', '.git'),
+          settings = {
+            angular = {
+              inlayHints = {
+                includeInlayVariableTypeHints = false,
+                includeInlayParameterNameHints = 'none',
+              },
+            },
+          },
+          flags = {
+            debounce_text_changes = 150,
           },
         },
       }
@@ -581,10 +684,13 @@ require('lazy').setup({
       --
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
+
+      local ensure_installed = {
+        'lua_ls',
+        'eslint_d',
         'stylua', -- Used to format Lua code
-      })
+      }
+
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
@@ -598,6 +704,7 @@ require('lazy').setup({
             require('lspconfig')[server_name].setup(server)
           end,
         },
+        automatic_installation = true,
       }
     end,
   },
@@ -636,11 +743,12 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        javascript = { 'prettierd', 'prettier', 'eslint_d' },
+        typescript = { 'prettierd', 'prettier', 'eslint_d' },
+        html = { 'prettierd', 'prettier' }, -- Ensure Prettier runs for HTML
+        css = { 'prettierd', 'prettier' },
+        json = { 'prettierd', 'prettier' },
+        markdown = { 'prettierd', 'prettier' },
       },
     },
   },
@@ -776,9 +884,9 @@ require('lazy').setup({
     --   -- Like many other themes, this one has different styles, and you could load
     --   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
     --   vim.cmd.colorscheme 'tokyonight-night'
+    -- end,
     --
     --   -- You can configure highlights by doing something like:
-    --   vim.cmd.hi 'Comment gui=none'
 
     -- NOTE: 'gruvbox' theme
     --
@@ -804,21 +912,21 @@ require('lazy').setup({
     --
     -- NOTE: 'catppucin' theme
     --
-    -- 'catppuccin/nvim',
-    -- lazy = false,
-    -- priority = 1000,
-    -- config = function()
-    --   require('catppuccin').setup {
-    --     flavour = 'mocha',
-    --     integrations = {
-    --       nvimtree = true,
-    --       treesitter = true,
-    --       gitsigns = true,
-    --       telescope = true,
-    --     },
-    --   }
-    --   vim.cmd.colorscheme 'catppuccin-mocha'
-    -- end,
+    'catppuccin/nvim',
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require('catppuccin').setup {
+        flavour = 'mocha',
+        integrations = {
+          nvimtree = true,
+          treesitter = true,
+          gitsigns = true,
+          telescope = true,
+        },
+      }
+      vim.cmd.colorscheme 'catppuccin-mocha'
+    end,
     --
     -- NOTE: 'tokyodark' theme
     --
@@ -831,18 +939,18 @@ require('lazy').setup({
     --
     -- NOTE: 'kanagawa' theme
     --
-    'rebelot/kanagawa.nvim',
-    lazy = false,
-    priority = 1000,
-    config = function()
-      require('kanagawa').setup {
-        background = {
-          dark = 'wave',
-          light = 'lotus',
-        },
-      }
-      vim.cmd.colorscheme 'kanagawa'
-    end,
+    -- 'rebelot/kanagawa.nvim',
+    -- lazy = false,
+    -- priority = 1000,
+    -- config = function()
+    --   require('kanagawa').setup {
+    --     background = {
+    --       dark = 'wave',
+    --       light = 'lotus',
+    --     },
+    --   }
+    --   vim.cmd.colorscheme 'kanagawa'
+    -- end,
   },
 
   -- Highlight todo, notes, etc in comments
@@ -891,17 +999,38 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'typescript',
+        'angular',
+        'css',
+        'json',
+        'tsx',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
         enable = true,
+        disable = {},
         -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
         --  If you are experiencing weird indenting issues, add the language to
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-        additional_vim_regex_highlighting = { 'ruby' },
+        additional_vim_regex_highlighting = false,
       },
-      indent = { enable = true, disable = { 'ruby' } },
+      playground = {
+        enable = true,
+      },
+      -- indent = { enable = true, disable = { 'ruby' } },
     },
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
@@ -921,11 +1050,11 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
-  require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
   --
   --[My Plugins]
   -- NOTE: The followig are plugins I Added
@@ -933,6 +1062,12 @@ require('lazy').setup({
   -- require 'custom.plugins.nvim-tree',
   require 'custom.plugins.bufferline',
   require 'custom.plugins.lualine',
+  require 'custom.plugins.nvim-tree',
+  require 'custom.plugins.fugitive',
+  require 'custom.plugins.obsidian',
+  require 'custom.plugins.headlines',
+  require 'custom.plugins.otter',
+  require 'custom.plugins.live-grep-args',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
