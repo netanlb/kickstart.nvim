@@ -6,7 +6,8 @@ return {
     -- local lazy_status = require 'lazy.status' -- to configure lazy pending updates count
     lualine.setup {
       options = {
-        theme = 'kanagawa',
+        theme = 'tokyonight',
+        disabled_filetypes = {},
         component_separators = { left = '', right = '' },
         section_separators = { left = '', right = '' },
         icons_enabled = true,

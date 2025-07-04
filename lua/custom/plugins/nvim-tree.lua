@@ -32,6 +32,8 @@ return {
         },
       },
       renderer = {
+        highlight_opened_files = 'all',
+        highlight_git = true,
         icons = {
           glyphs = {
             folder = {
@@ -48,6 +50,8 @@ return {
           },
         },
       },
+      hijack_netrw = true,
+      respect_buf_cwd = true,
     }
     -- set keymaps
     local keymap = vim.keymap

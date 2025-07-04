@@ -1,3 +1,13 @@
+vim.api.nvim_create_user_command('CursorJump', function()
+  local file = vim.fn.expand '%:p'
+  local line = vim.fn.line '.'
+  local col = vim.fn.col '.'
+  local cmd = string.format('cursor --goto "%s:%d:%d"', file, line, col)
+  vim.fn.jobstart(cmd, { detach = true })
+end, {})
+
+-- Apply immediately on first load
+vim.cmd 'doautocmd ColorScheme'
 vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
   pattern = { '*.component.html' },
   callback = function()
@@ -186,6 +196,7 @@ vim.opt.rtp:prepend(lazypath)
 --
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
+  { import = 'custom.plugins.mason-workaround' },
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
 
@@ -725,22 +736,10 @@ require('lazy').setup({
     },
     opts = {
       notify_on_error = false,
-      format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
-        local lsp_format_opt
-        if disable_filetypes[vim.bo[bufnr].filetype] then
-          lsp_format_opt = 'never'
-        else
-          lsp_format_opt = 'fallback'
-        end
-        return {
-          timeout_ms = 500,
-          lsp_format = lsp_format_opt,
-        }
-      end,
+      format_on_save = {
+        timeout_ms = 1000,
+        lsp_format = true,
+      },
       formatters_by_ft = {
         lua = { 'stylua' },
         javascript = { 'prettierd', 'prettier', 'eslint_d' },
@@ -912,30 +911,34 @@ require('lazy').setup({
     --
     -- NOTE: 'catppucin' theme
     --
-    'catppuccin/nvim',
-    lazy = false,
-    priority = 1000,
-    config = function()
-      require('catppuccin').setup {
-        flavour = 'mocha',
-        integrations = {
-          nvimtree = true,
-          treesitter = true,
-          gitsigns = true,
-          telescope = true,
-        },
-      }
-      vim.cmd.colorscheme 'catppuccin-mocha'
-    end,
+    -- 'catppuccin/nvim',
+    -- lazy = false,
+    -- priority = 1000,
+    -- config = function()
+    --   require('catppuccin').setup {
+    --     transparent = true,
+    --     flavour = 'mocha',
+    --     integrations = {
+    --       nvimtree = true,
+    --       treesitter = true,
+    --       gitsigns = true,
+    --       telescope = true,
+    --     },
+    --   }
+    --   vim.cmd.colorscheme 'catppuccin-mocha'
+    -- end,
     --
     -- NOTE: 'tokyodark' theme
     --
-    -- 'tiagovla/tokyodark.nvim',
-    -- lazy = false,
-    -- priority = 1000,
-    -- init = function()
-    --   vim.cmd.colorscheme 'tokyodark'
-    -- end,
+    'folke/tokyonight.nvim',
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require('tokyonight').setup {
+        transparent = true,
+      }
+      vim.cmd.colorscheme 'tokyonight'
+    end,
     --
     -- NOTE: 'kanagawa' theme
     --
@@ -1068,6 +1071,7 @@ require('lazy').setup({
   require 'custom.plugins.headlines',
   require 'custom.plugins.otter',
   require 'custom.plugins.live-grep-args',
+  require 'custom.plugins.noice',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -1102,3 +1106,47 @@ require('lazy').setup({
 })
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+--
+-- disable color overrides(to enable transparency)
+vim.cmd [[
+  highlight Normal guibg=NONE ctermbg=NONE
+  highlight NormalNC guibg=NONE ctermbg=NONE
+  highlight EndOfBuffer guibg=NONE ctermbg=NONE
+  highlight SignColumn guibg=NONE ctermbg=NONE
+  highlight VertSplit guibg=NONE ctermbg=NONE
+  highlight StatusLine guibg=NONE ctermbg=NONE
+  highlight LineNr guibg=NONE ctermbg=NONE
+  highlight Folded guibg=NONE ctermbg=NONE
+  highlight FoldColumn guibg=NONE ctermbg=NONE
+  highlight WinSeparator guibg=NONE
+]]
+vim.cmd [[
+  highlight TelescopeNormal guibg=NONE
+  highlight TelescopeBorder guibg=NONE
+  highlight TelescopePromptNormal guibg=NONE
+  highlight TelescopePromptBorder guibg=NONE
+  highlight TelescopeResultsNormal guibg=NONE
+  highlight TelescopeResultsBorder guibg=NONE
+  highlight TelescopePreviewNormal guibg=NONE
+  highlight TelescopePreviewBorder guibg=NONE
+]]
+vim.cmd [[
+  highlight NvimTreeNormal guibg=NONE
+  highlight NvimTreeNormalNC guibg=NONE
+  highlight NvimTreeEndOfBuffer guibg=NONE
+  highlight NvimTreeVertSplit guibg=NONE
+]]
+vim.cmd [[
+  highlight StatusLine guibg=NONE
+  highlight StatusLineNC guibg=NONE
+  highlight lualine_c_normal guibg=NONE
+  highlight lualine_b_normal guibg=NONE
+]]
+vim.cmd [[
+  highlight NormalFloat guibg=NONE
+  highlight FloatBorder guibg=NONE
+  highlight Pmenu guibg=NONE
+  highlight PmenuSel guibg=NONE
+  highlight WinSeparator guibg=NONE
+  highlight MsgArea guibg=NONE
+]]
