@@ -1,3 +1,4 @@
+-- just to page in cursor
 vim.api.nvim_create_user_command('CursorJump', function()
   local file = vim.fn.expand '%:p'
   local line = vim.fn.line '.'
@@ -5,6 +6,9 @@ vim.api.nvim_create_user_command('CursorJump', function()
   local cmd = string.format('cursor --goto "%s:%d:%d"', file, line, col)
   vim.fn.jobstart(cmd, { detach = true })
 end, {})
+
+-- disable tabline
+vim.opt.showtabline = 0
 
 -- Apply immediately on first load
 vim.cmd 'doautocmd ColorScheme'
@@ -1063,7 +1067,7 @@ require('lazy').setup({
   -- NOTE: The followig are plugins I Added
   --
   -- require 'custom.plugins.nvim-tree',
-  require 'custom.plugins.bufferline',
+  -- require 'custom.plugins.bufferline',
   require 'custom.plugins.lualine',
   require 'custom.plugins.nvim-tree',
   require 'custom.plugins.fugitive',
